@@ -67,6 +67,7 @@ void KCoreLayout::initGraph(const Graph &G) {
 
     /*
     //debug
+    utils::print("--------------init Graph debug--------------");
     utils::print("node number:", V_, "edge number", E_);
     for (int i = 0; i < V_; ++i) {
         auto &adjList = adjList_[i];
@@ -95,6 +96,7 @@ void KCoreLayout::kCoreDecomposition() {
     shells_.emplace_back();
     for (auto x : buckets[0]) {
         shells_[0].push_back(x);
+        vertexs_[x].setC(0);
         vis[x] = true;
         ++cnt;
     }
@@ -126,11 +128,14 @@ void KCoreLayout::kCoreDecomposition() {
     c_max_ = shells_.size() - 1;
 
     /*
-    //debug
+    utils::print("--------------kCoreDecomposition debug--------------");
     for (int i = 0; i < k; ++i) {
         auto &shell = shells_[i];
         std::cout << i << " : ";
         utils::printArr(shell);
+    }
+    for (int i = 0; i < V_; ++i) {
+        utils::print("node", i, ":", vertexs_[i].getC());
     }
      */
 }
@@ -224,30 +229,60 @@ void KCoreLayout::layout() {
         auto self = shared_from_this();
         component->layout(shared_from_this());
     }
-    for (int u = 0; u < V_; ++u) {
-        auto &vertex = vertexs_[u];
-        int c = vertex.getC();
-        vertex.setRhoA(c_max_ - c);
+    for (int c = 0; c < c_max_; ++c) {
+        for (auto u : shells_[c]) {
+            auto &vertex = vertexs_[u];
+            vertex.setRhoA(c_max_ - c);
 
-        int cnt = 0, sum = 0, t;
-        for (auto v : adjList_[u]) {
-            t = vertexs_[v].getC();
-            if (t >= c) {
-                ++cnt;
-                sum += c_max_ - t;
+            int cnt = 0, sum = 0, t;
+            for (auto v : adjList_[u]) {
+                t = vertexs_[v].getC();
+                if (t >= c) {
+                    ++cnt;
+                    sum += c_max_ - t;
+                }
             }
-        }
-        vertex.setRhoB(static_cast<double>(sum) / cnt);
+            if (cnt > 0) {
+                vertex.setRhoB(static_cast<double>(sum) / cnt);
+            } else {
+                vertex.setRhoB(0);
+            }
 
+            double unit = vertex.getComponent().lock()->getU();
+            vertex.setA(unit * std::cos(vertex.getAlpha()));
+            vertex.setB(unit * std::sin(vertex.getAlpha()));
+
+            vertex.setCdr();
+        }
+    }
+    for (auto u : shells_[c_max_]) {
+        auto &vertex = vertexs_[u];
         double unit = vertex.getComponent().lock()->getU();
         vertex.setA(unit * std::cos(vertex.getAlpha()));
         vertex.setB(unit * std::sin(vertex.getAlpha()));
 
-        vertex.setCdr();
+        vertex.setRandom();
     }
 }
 
 void KCoreLayout::draw(GraphAttributes &GA) {
+    /*
+    double min_x = INT_MAX, min_y = INT_MAX;
+    for (int i = 0; i < V_; ++i) {
+        auto &vertex = vertexs_[i];
+        min_x = std::min(min_x, vertex.getX());
+        min_y = std::min(min_y, vertex.getY());
+    }
+    min_x = std::max(-min_x, 0.0) + 200;
+    min_y = std::max(-min_y, 0.0) + 200;
+    for (int i = 0; i < V_; ++i) {
+        auto &vertex = vertexs_[i];
+        GA.x(vertex.getNode()) = vertex.getX() + min_x;
+        GA.y(vertex.getNode()) = vertex.getY() + min_y;
+    }
+     */
+
+
     for (int i = 0; i < V_; ++i) {
         auto &vertex = vertexs_[i];
         GA.x(vertex.getNode()) = vertex.getX();
@@ -256,16 +291,25 @@ void KCoreLayout::draw(GraphAttributes &GA) {
 }
 
 void KCoreLayout::call(GraphAttributes &GA) {
+
     initGraph(GA.constGraph());
     kCoreDecomposition();
     partition();
     layout();
     draw(GA);
+
+    /*
+    auto&& G = GA.constGraph();
+    for (auto node : G.nodes) {
+        GA.x(node) = utils::Random<double>::get(100);
+        GA.y(node) = utils::Random<double>::get(100);
+    }
+     */
 }
 
 KCoreLayout::KCoreLayout() {
     //初始化参数
-    SingleTon<Param>::getInstance(0.5, 100, 100);
+    SingleTon<Param>::getInstance(0.4, 100, 300);
 }
 
 KCoreLayout::~KCoreLayout() {}

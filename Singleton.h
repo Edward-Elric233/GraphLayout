@@ -8,16 +8,32 @@
 
 #include "utils.h"
 #include <memory>
+#include <mutex>
+#include <thread>
 
 template<typename T>
 class SingleTon {
     using Ptr = std::shared_ptr<T>;
+    static Ptr p;
+    static std::once_flag flag;
 public:
     template<typename ...Args>
     static Ptr getInstance(Args&& ...args) {
-        static Ptr p = std::make_shared<T>(std::forward<Args>(args)...);    //对于静态变量的初始化只会进行一次
+        auto init = [](auto&&... args1) {
+            std::thread t([]{});
+            t.join();   //为了引入pthread_create
+            //TODO:会对参数进行拷贝，如何给可调用对象传递参数包？
+            p.reset(new T(std::move(args1)...));
+        };
+        std::call_once(flag, init, std::forward<Args>(args)...);
         return p;
     }
 };
+
+template<typename T>
+typename SingleTon<T>::Ptr SingleTon<T>::p;
+
+template<typename T>
+std::once_flag SingleTon<T>::flag;
 
 #endif //GRAPHLAYOUT_SINGLETON_H

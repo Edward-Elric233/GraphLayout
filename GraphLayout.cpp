@@ -10,22 +10,32 @@
 
 void input(Graph& G, GraphAttributes& GA) {
     using namespace ogdf;
-    randomGraph(G, 10, 20);
+    randomGraph(G, 10000, 20000);
+
+    /*
+    if (!GraphIO::read(GA, G, "output.gml", GraphIO::readGML)) {
+        std::cerr << "can't find file" << std::endl;
+        exit(0);
+    }
+     */
+
     for (auto node : G.nodes) {
         GA.height(node) = 10;
         GA.width(node) = 10;
         GA.shape(node) = Shape::Ellipse;
-        GA.label(node) = to_string(node->index());
+        //GA.label(node) = to_string(node->index());
     }
     for (auto edge : G.edges) {
         GA.arrowType(edge) =  EdgeArrow::None;
+        GA.strokeColor(edge) = Color::Name::Grey;
+        GA.strokeWidth(edge) = 0.8;
     }
 }
 
 void output(const Graph& G, const GraphAttributes& GA) {
     using namespace ogdf;
-    GraphIO::write(GA, "output.gml", GraphIO::writeGML);
-    GraphIO::write(GA, "output.svg", GraphIO::drawSVG);
+    GraphIO::write(GA, "output_std.gml", GraphIO::writeGML);
+    GraphIO::write(GA, "output_std.svg", GraphIO::drawSVG);
 }
 
 void layout(Graph& G, GraphAttributes& GA) {

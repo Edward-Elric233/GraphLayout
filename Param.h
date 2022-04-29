@@ -9,9 +9,9 @@
 #include <cmath>
 
 class Param {
-    double epsilon_;
-    double delta_;
-    double gamma_;
+    double epsilon_;    //环重叠的可能性
+    double delta_;      //组件之间的距离
+    double gamma_;      //组件的直径
 public:
     static constexpr double TWOPI = 2 * M_PI;
     static constexpr double ONE = 1.0;

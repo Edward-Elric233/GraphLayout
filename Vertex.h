@@ -33,6 +33,14 @@ public:
         setY(component->getY() + gamma * getB() * getRho());
     }
 
+    void setRandom() {
+        double gamma = SingleTon<Param>::getInstance()->getGamma();
+        auto component = component_.lock();
+        setRho(utils::Random<double>::get(1.0));
+        setX(component->getX() + gamma * getA() * getRho());
+        setY(component->getY() + gamma * getB() * getRho());
+    }
+
     double getRhoA() const {
         return rho_a_;
     }
