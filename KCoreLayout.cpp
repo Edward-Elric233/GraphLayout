@@ -221,6 +221,7 @@ void KCoreLayout::partition() {
 void KCoreLayout::layout() {
     for (auto &component : componets_) {
         //cal alpha
+        auto self = shared_from_this();
         component->layout(shared_from_this());
     }
     for (int u = 0; u < V_; ++u) {
